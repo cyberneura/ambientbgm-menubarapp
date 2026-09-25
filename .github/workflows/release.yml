@@ -348,8 +348,19 @@ jobs:
           # Marked Latest only when it is the newest published version. Re-running
           # an older version that failed earlier would otherwise take Latest back
           # from a newer one, and the Homebrew tap follows Latest.
-          LATEST=$(gh api "repos/${GH_REPO}/releases/latest" --jq .tag_name 2>/dev/null || true)
-          LATEST="${LATEST#v}"
+          # Only a 404 (nothing published yet) may read as "no Latest". Any other
+          # failure stops here: guessing would mark an older version Latest.
+          if LATEST=$(gh api "repos/${GH_REPO}/releases/latest" --jq .tag_name 2>/dev/null); then
+            LATEST="${LATEST#v}"
+          else
+            status=$(gh api "repos/${GH_REPO}/releases/latest" \
+              --silent --include 2>/dev/null | head -n 1 | awk '{print $2}' || true)
+            if [ "$status" != "404" ]; then
+              echo "::error::could not read the latest release (HTTP ${status:-none}). Not guessing."
+              exit 1
+            fi
+            LATEST=""
+          fi
           if [ -z "$LATEST" ] \
             || [ "$(printf '%s\n%s\n' "$LATEST" "$VERSION" | sort -V | tail -n 1)" = "$VERSION" ]; then
             gh release edit "v${VERSION}" --draft=false --latest
