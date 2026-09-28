@@ -50,16 +50,18 @@ if [ -n "$FOUND" ]; then
 fi
 
 # Fails closed: a line that looks like an import declaration but cannot be read
-# is an error, not something to skip.
+# is an error, not something to skip. The declaration has to take the whole line
+# (bar a // comment), so `import Cocoa; import X` is rejected rather than read
+# as Cocoa alone.
 IMPORT_PREFIX='^[[:space:]]*((@[A-Za-z_][A-Za-z0-9_]*(\([^)]*\))?|public|package|internal|fileprivate|private)[[:space:]]+)*import[[:space:]]'
-IMPORT_DECL="${IMPORT_PREFIX}"'+((typealias|struct|class|enum|protocol|let|var|func)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)'
+IMPORT_DECL="${IMPORT_PREFIX}"'+((typealias|struct|class|enum|protocol|let|var|func)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)(\.[A-Za-z_][A-Za-z0-9_]*)*[[:space:]]*(//.*)?$'
 for src in Sources/*.swift; do
   [ "$src" = "$OUT_SWIFT" ] && continue
   # Candidates: every line starting with an attribute, an access modifier or
   # `import` that has the word import in it, e.g. `import X`, `public import X`,
   # `@_spi(Testing) import X`, `import struct X.Y`.
   while IFS= read -r line; do
-    module=$(printf '%s\n' "$line" | sed -nE "s/${IMPORT_DECL}.*/\\6/p")
+    module=$(printf '%s\n' "$line" | sed -nE "s#${IMPORT_DECL}#\\6#p")
     if [ -z "$module" ]; then
       echo "Error: $src: cannot read this import declaration: $line" >&2
       exit 1
