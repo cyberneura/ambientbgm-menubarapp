@@ -37,15 +37,15 @@ OUT_SWIFT="Sources/ThirdPartyNotices.swift"
 # assumed to be a library that ends up in the binary.
 SYSTEM_MODULES=" AppKit Cocoa Combine CoreGraphics Darwin Dispatch Foundation os QuartzCore Swift SwiftUI WebKit "
 
-for f in Package.swift Package.resolved; do
-  if [ -e "$f" ]; then
-    echo "Error: $f exists, so the app may have package dependencies." >&2
-    echo "List them in the notices and update this script." >&2
-    exit 1
-  fi
-done
-if compgen -G "*.xcodeproj" >/dev/null || compgen -G "*.xcworkspace" >/dev/null; then
-  echo "Error: an Xcode project exists; its Package.resolved has to be read." >&2
+# Anywhere in the tree, not only at the root: a nested project (macos/App.xcodeproj
+# or a local package) would bring its dependencies in just the same.
+FOUND=$(find . \( -path ./.git -o -path ./dist \) -prune -o \
+  \( -name Package.swift -o -name Package.resolved -o -name '*.xcodeproj' -o -name '*.xcworkspace' \) \
+  -print)
+if [ -n "$FOUND" ]; then
+  echo "Error: the app may have package dependencies; found:" >&2
+  echo "$FOUND" >&2
+  echo "List them in the notices and update this script." >&2
   exit 1
 fi
 
