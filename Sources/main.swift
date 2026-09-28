@@ -57,6 +57,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if event.type == .rightMouseUp {
             let menu = NSMenu()
+            let aboutItem = NSMenuItem(title: "About AmbientBGM Menubar", action: #selector(showAbout), keyEquivalent: "")
+            aboutItem.target = self
+            menu.addItem(aboutItem)
+            let licensesItem = NSMenuItem(title: "Third-Party Licenses…", action: #selector(showThirdPartyLicenses), keyEquivalent: "")
+            licensesItem.target = self
+            menu.addItem(licensesItem)
+            menu.addItem(NSMenuItem.separator())
             let reloadItem = NSMenuItem(title: "Reload", action: #selector(reloadPage), keyEquivalent: "")
             reloadItem.target = self
             menu.addItem(reloadItem)
@@ -75,6 +82,51 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.activate(ignoringOtherApps: true)
             }
         }
+    }
+
+    // LSUIElement のアプリは前面に出ていないので、activate しないとパネルや
+    // ダイアログが他のアプリのウインドウの後ろに開く。
+    @objc func showAbout() {
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        NSApplication.shared.orderFrontStandardAboutPanel(nil)
+    }
+
+    /// THIRD-PARTY-NOTICES.txt の本文 (ビルド時に ThirdPartyNotices.swift として埋め込み済み) を
+    /// スクロールできるテキスト欄に入れたダイアログで表示する。
+    @objc func showThirdPartyLicenses() {
+        // メニューの action は performClick(_:) の中から呼ばれる。そこで runModal すると
+        // メニューの後始末 (statusItem.menu = nil) がダイアログを閉じるまで止まるので、
+        // 一度 run loop に戻してから開く。
+        DispatchQueue.main.async { [weak self] in
+            self?.presentThirdPartyLicenses()
+        }
+    }
+
+    private func presentThirdPartyLicenses() {
+        let scrollView = NSScrollView(frame: NSRect(x: 0, y: 0, width: 560, height: 320))
+        scrollView.hasVerticalScroller = true
+        scrollView.borderType = .bezelBorder
+
+        let textView = NSTextView(frame: NSRect(origin: .zero, size: scrollView.contentSize))
+        textView.isEditable = false
+        textView.isSelectable = true
+        textView.font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+        textView.textContainerInset = NSSize(width: 4, height: 4)
+        textView.isVerticallyResizable = true
+        textView.isHorizontallyResizable = false
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.autoresizingMask = [.width]
+        textView.textContainer?.widthTracksTextView = true
+        textView.string = thirdPartyNotices
+        scrollView.documentView = textView
+
+        let alert = NSAlert()
+        alert.messageText = "Third-Party Licenses"
+        alert.informativeText = "Libraries bundled with AmbientBGM Menubar and their licenses."
+        alert.accessoryView = scrollView
+        alert.addButton(withTitle: "OK")
+        NSApplication.shared.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     @objc func reloadPage() {

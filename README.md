@@ -2,7 +2,8 @@
 
 A macOS menu bar app for [AmbientBGM.com](https://ambientbgm.com), a free ambient
 music player. Click the icon in the menu bar to open the player in a popover; the
-icon changes while music is playing. Right-click for Reload and Quit.
+icon changes while music is playing. Right-click for About, Third-Party Licenses,
+Reload and Quit.
 
 The app is a thin WebKit wrapper around the web player. The player itself lives in
 [cyberneura/ambientbgm](https://github.com/cyberneura/ambientbgm).
@@ -47,4 +48,20 @@ chat widget, which would otherwise cover the player in the small popover.
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
+
+## Third-party licenses
+
+[THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt) lists the third-party libraries
+bundled with the app. There are none at the moment: the app is built from its own
+Swift sources and uses only the frameworks that come with macOS. In the app, the
+same text is under **Third-Party Licenses…** in the right-click menu, just below
+**About AmbientBGM Menubar**.
+
+The file, and `Sources/ThirdPartyNotices.swift` which compiles it into the app,
+are generated; do not edit them by hand:
+
+```shell
+scripts/generate-third-party-notices.sh           # rewrite both
+scripts/generate-third-party-notices.sh --check   # fail if they are stale (run in CI)
+```
