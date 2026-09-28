@@ -49,18 +49,28 @@ if [ -n "$FOUND" ]; then
   exit 1
 fi
 
+# Fails closed: a line that looks like an import declaration but cannot be read
+# is an error, not something to skip.
+IMPORT_PREFIX='^[[:space:]]*((@[A-Za-z_][A-Za-z0-9_]*(\([^)]*\))?|public|package|internal|fileprivate|private)[[:space:]]+)*import[[:space:]]'
+IMPORT_DECL="${IMPORT_PREFIX}"'+((typealias|struct|class|enum|protocol|let|var|func)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)'
 for src in Sources/*.swift; do
   [ "$src" = "$OUT_SWIFT" ] && continue
-  # `import X`, `@testable import X`, `public import X` (Swift 6 access levels),
-  # `import struct X.Y` and the like.
-  while read -r module; do
-    [ -z "$module" ] && continue
+  # Candidates: every line starting with an attribute, an access modifier or
+  # `import` that has the word import in it, e.g. `import X`, `public import X`,
+  # `@_spi(Testing) import X`, `import struct X.Y`.
+  while IFS= read -r line; do
+    module=$(printf '%s\n' "$line" | sed -nE "s/${IMPORT_DECL}.*/\\6/p")
+    if [ -z "$module" ]; then
+      echo "Error: $src: cannot read this import declaration: $line" >&2
+      exit 1
+    fi
     if [[ "$SYSTEM_MODULES" != *" $module "* ]]; then
       echo "Error: $src imports '$module', which is not a known Apple framework." >&2
       echo "If it is one, add it to SYSTEM_MODULES; if not, list it in the notices." >&2
       exit 1
     fi
-  done < <(sed -nE 's/^[[:space:]]*((@[A-Za-z_]+|public|package|internal|fileprivate|private)[[:space:]]+)*import[[:space:]]+((typealias|struct|class|enum|protocol|let|var|func)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*).*/\5/p' "$src")
+  done < <(grep -E '^[[:space:]]*(@|public|package|internal|fileprivate|private|import)' "$src" \
+             | grep -E '(^|[^A-Za-z0-9_])import([^A-Za-z0-9_]|$)' || true)
 done
 
 TMP_DIR=$(mktemp -d)
