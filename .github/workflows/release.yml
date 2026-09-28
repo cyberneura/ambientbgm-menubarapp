@@ -144,6 +144,13 @@ jobs:
       - name: Show the toolchain
         run: swiftc --version
 
+      # THIRD-PARTY-NOTICES.txt and the copy compiled into the app
+      # (Sources/ThirdPartyNotices.swift) must match what the script writes now,
+      # and the script refuses to write "no libraries" once something is imported
+      # that is not an Apple framework.
+      - name: Check the third-party notices
+        run: scripts/generate-third-party-notices.sh --check
+
       # Unsigned: this job holds no secrets. The signed build below runs the
       # same script, so what passes here is what gets released.
       - name: Build the app

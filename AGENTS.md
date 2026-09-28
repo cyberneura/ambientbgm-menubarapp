@@ -18,6 +18,17 @@ scripts/make-dmg.sh     # dist/AmbientBGMMenubar_<version>_universal.dmg
 - `Info.plist` は `packaging/Info.plist` の `__VERSION__` を `VERSION` で置き換えて作る
 - **Linux ではビルドできない** (Cocoa / WebKit)。検証は PR CI の test job (macOS) に頼る
 
+## ライセンス表示
+
+- アプリ自身は MIT (`LICENSE`)。同梱ライブラリの一覧は `THIRD-PARTY-NOTICES.txt`
+- `THIRD-PARTY-NOTICES.txt` と、それをバイナリに埋め込む `Sources/ThirdPartyNotices.swift` は
+  `scripts/generate-third-party-notices.sh` の生成物。手で編集しない
+- 現状は Apple のフレームワーク (Cocoa / WebKit) だけで、同梱するサードパーティーのライブラリは無い。
+  スクリプトは Package.swift / Package.resolved / Xcode プロジェクトが現れるか、Apple の
+  フレームワーク以外を import すると失敗する。**依存を足す時はスクリプトに一覧の書き出しを
+  足して流し直し、生成物をコミットする** (PR の test job が `--check` で古さを検出する)
+- 右クリックメニューの About の直下の「Third-Party Licenses…」で NSAlert に表示する
+
 ## リリース
 
 **`VERSION` を main で上げるだけ** (`scripts/release.sh [patch|minor|major]`)。
