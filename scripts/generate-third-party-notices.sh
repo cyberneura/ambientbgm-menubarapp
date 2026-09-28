@@ -57,10 +57,10 @@ IMPORT_PREFIX='^[[:space:]]*((@[A-Za-z_][A-Za-z0-9_]*(\([^)]*\))?|public|package
 IMPORT_DECL="${IMPORT_PREFIX}"'+((typealias|struct|class|enum|protocol|let|var|func)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)(\.[A-Za-z_][A-Za-z0-9_]*)*[[:space:]]*(//.*)?$'
 for src in Sources/*.swift; do
   [ "$src" = "$OUT_SWIFT" ] && continue
-  # Candidates: every line with the word import in it, except comment lines
-  # (// and the * of a /* */ block). Anything unusual, such as
-  # `/* note */ import X` or the word in a string, then fails as unreadable
-  # instead of being skipped.
+  # Candidates: every line with the word import in it, except // comment lines.
+  # Anything unusual, such as `/* note */ import X`, `*/ import X` or the word
+  # in a string or a block comment, then fails as unreadable instead of being
+  # skipped. Reword the comment rather than teach this parser block comments.
   while IFS= read -r line; do
     module=$(printf '%s\n' "$line" | sed -nE "s#${IMPORT_DECL}#\\6#p")
     if [ -z "$module" ]; then
@@ -73,7 +73,7 @@ for src in Sources/*.swift; do
       exit 1
     fi
   done < <(grep -E '(^|[^A-Za-z0-9_])import([^A-Za-z0-9_]|$)' "$src" \
-             | grep -vE '^[[:space:]]*(//|\*)' || true)
+             | grep -vE '^[[:space:]]*//' || true)
 done
 
 TMP_DIR=$(mktemp -d)
