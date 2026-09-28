@@ -1,7 +1,8 @@
 # AmbientBGM Menubar
 
 ambientbgm.com を NSPopover の WKWebView で開くだけの macOS メニューバーアプリ。
-`Sources/main.swift` 1 ファイルを `swiftc` で直接コンパイルする (Xcode プロジェクトも SwiftPM も無い)。
+`Sources/*.swift` (本体の `main.swift` と、生成物の `ThirdPartyNotices.swift`) を `swiftc` で直接コンパイルする
+(Xcode プロジェクトも SwiftPM も無い)。
 public リポジトリなので README・コード中の UI 文字列は英語、このファイルだけ日本語。
 
 元は `cyberneura/ambientbgm` の `menubarapp/` にあった (CYBERNEURA-DEV-859 で分離)。
