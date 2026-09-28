@@ -57,9 +57,10 @@ IMPORT_PREFIX='^[[:space:]]*((@[A-Za-z_][A-Za-z0-9_]*(\([^)]*\))?|public|package
 IMPORT_DECL="${IMPORT_PREFIX}"'+((typealias|struct|class|enum|protocol|let|var|func)[[:space:]]+)?([A-Za-z_][A-Za-z0-9_]*)(\.[A-Za-z_][A-Za-z0-9_]*)*[[:space:]]*(//.*)?$'
 for src in Sources/*.swift; do
   [ "$src" = "$OUT_SWIFT" ] && continue
-  # Candidates: every line starting with an attribute, an access modifier or
-  # `import` that has the word import in it, e.g. `import X`, `public import X`,
-  # `@_spi(Testing) import X`, `import struct X.Y`.
+  # Candidates: every line with the word import in it, except comment lines
+  # (// and the * of a /* */ block). Anything unusual, such as
+  # `/* note */ import X` or the word in a string, then fails as unreadable
+  # instead of being skipped.
   while IFS= read -r line; do
     module=$(printf '%s\n' "$line" | sed -nE "s#${IMPORT_DECL}#\\6#p")
     if [ -z "$module" ]; then
@@ -71,8 +72,8 @@ for src in Sources/*.swift; do
       echo "If it is one, add it to SYSTEM_MODULES; if not, list it in the notices." >&2
       exit 1
     fi
-  done < <(grep -E '^[[:space:]]*(@|public|package|internal|fileprivate|private|import)' "$src" \
-             | grep -E '(^|[^A-Za-z0-9_])import([^A-Za-z0-9_]|$)' || true)
+  done < <(grep -E '(^|[^A-Za-z0-9_])import([^A-Za-z0-9_]|$)' "$src" \
+             | grep -vE '^[[:space:]]*(//|\*)' || true)
 done
 
 TMP_DIR=$(mktemp -d)
