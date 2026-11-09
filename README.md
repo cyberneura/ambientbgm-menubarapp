@@ -5,6 +5,8 @@ music player. Click the icon in the menu bar to open the player in a popover; th
 icon changes while music is playing. Right-click for About, Third-Party Licenses,
 Reload and Quit.
 
+Website: https://www.cyberneura.com/app/ambientbgm-menubar
+
 The app is a thin WebKit wrapper around the web player. The player itself lives in
 [cyberneura/ambientbgm](https://github.com/cyberneura/ambientbgm).
 
